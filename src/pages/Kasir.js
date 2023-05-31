@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   ButtonGroup,
@@ -13,82 +13,57 @@ import {
   Typography,
   styled,
   CssBaseline,
+  Autocomplete,
 } from "@mui/material";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
-import { ArrowDropDown } from "@mui/icons-material";
 import LocalPrintshopIcon from "@mui/icons-material/LocalPrintshop";
 import SaveIcon from "@mui/icons-material/Save";
 import CurrencyFormat from "react-currency-format";
-
-function createData(
-  name: string,
-  calories: number,
-  fat: number,
-  carbs: number,
-  protein: number
-) {
-  return { name, calories, fat, carbs, protein };
-}
-
-const rows = [
-  createData("Frozen yoghurt", 159, 6.0, 24, 4.0),
-  createData("Ice cream sandwich", 237, 9.0, 37, 4.3),
-  createData("Eclair", 262, 16.0, 24, 6.0),
-  createData("Cupcake", 305, 3.7, 67, 4.3),
-  createData("Gingerbread", 356, 16.0, 49, 3.9),
-];
+import CloseIcon from "@mui/icons-material/Close";
+import axios from "axios";
 
 function Kasir() {
-  const [ampunt, setAmount] = useState(0);
+  const [rows, setRows] = useState([]);
+  const [produk, setProduk] = useState([]);
 
   const handleNewAmount = (e) => {
     console.log(e);
   };
+
+  useEffect(() => {
+    console.log(produk);
+  }, [produk]);
+  useEffect(() => {
+    getProduk();
+  }, []);
+
+  const getProduk = () => {
+    axios
+      .get(`${process.env.REACT_APP_BASE_URL}/produk`)
+      .then((result) => {
+        // console.log(result.data);
+        let data = result.data;
+        let newProduk = [];
+        data.map((item) => {
+          newProduk.push({
+            harga: item.harga,
+            label: item.kodeBarang,
+            kodeBarang: item.kodeBarang,
+            namaBarang: item.namaBarang,
+            quantity: item.quantity,
+          });
+        });
+        setProduk(newProduk);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   const handleFocus = (event) => event.target.select();
   return (
     <Grid container spacing={2}>
       <Grid item xs={8} md={8} lg={8}>
-        <Grid item xs={12} md={12} lg={12} sx={{ marginBottom: 2 }}>
-          <Paper
-            sx={{
-              p: 2,
-              display: "flex",
-              flexDirection: "column",
-              height: "auto",
-            }}
-          >
-            <Typography variant="h4" sx={{ marginBottom: 2 }}>
-              Kasir
-            </Typography>
-            <Grid
-              sx={{
-                flexDirection: "row",
-                display: "flex",
-                height: "auto",
-                width: "100%",
-              }}
-            >
-              <TextField
-                id="outlined-basic"
-                label="Kode Barang"
-                variant="outlined"
-                placeholder="0123456789"
-                sx={{ marginRight: 2, width: "50%" }}
-                onFocus={handleFocus}
-              />
-              <CurrencyFormat
-                customInput={TextField}
-                thousandSeparator
-                prefix="Rp."
-                decimalScale={0}
-                placeholder="Rp.10.000.000"
-                label="Pembayaran"
-                style={{ width: "50%" }}
-                onChange={handleNewAmount}
-              />
-            </Grid>
-          </Paper>
-        </Grid>
         <Grid item xs={12} md={12} lg={12}>
           <Paper
             sx={{
@@ -98,9 +73,28 @@ function Kasir() {
               height: "auto",
             }}
           >
-            <Typography variant="h4" sx={{ marginBottom: 2 }}>
-              Pembelian
-            </Typography>
+            <Grid
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                marginBottom: 2,
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography variant="h4" sx={{ marginRight: 2, marginTop: 1 }}>
+                Pembelian
+              </Typography>
+              <Autocomplete
+                disablePortal
+                id="combo-box-demo"
+                options={produk}
+                placeholder="0123456789"
+                sx={{ width: 300 }}
+                renderInput={(params) => (
+                  <TextField {...params} label="Kode Barang" />
+                )}
+              />
+            </Grid>
             <TableContainer component={Paper}>
               <Table
                 sx={{ minWidth: 650 }}
@@ -146,28 +140,39 @@ function Kasir() {
             height: "auto",
           }}
         >
-          <Typography variant="h4">Total</Typography>
+          <Typography variant="h5">Pembayaran</Typography>
+          <CurrencyFormat
+            customInput={TextField}
+            thousandSeparator
+            prefix="Rp."
+            decimalScale={0}
+            placeholder="Rp.10.000.000"
+            label="Total Pembayaran"
+            onChange={handleNewAmount}
+            sx={{ marginBottom: 2, marginTop: 1 }}
+          />
+          <Typography variant="h5">Total Pembelian</Typography>
           <Typography
-            variant="h2"
+            variant="h3"
             sx={{ color: "error.main", marginBottom: 2 }}
           >
             Rp. 52.000
           </Typography>
-          <Typography variant="h4">Kembalian</Typography>
+
+          <Typography variant="h5">Total Kembalian</Typography>
           <Typography
             variant="h3"
             sx={{ color: "success.main", marginBottom: 2 }}
           >
             Rp. 17.000
           </Typography>
-
           <Button variant="contained" size="large" sx={{ marginBottom: 2 }}>
             <LocalPrintshopIcon />
             Cetak
           </Button>
-          <Button variant="outlined" size="large">
-            <SaveIcon />
-            Simpan
+          <Button variant="outlined" size="large" color="error">
+            <CloseIcon />
+            Bersihkan
           </Button>
         </Paper>
       </Grid>
