@@ -18,7 +18,7 @@ import {
   Box,
 } from "@mui/material";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
-import { ArrowDropDown } from "@mui/icons-material";
+import { ArrowDropDown, RemoveFromQueue } from "@mui/icons-material";
 import LocalPrintshopIcon from "@mui/icons-material/LocalPrintshop";
 import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
@@ -35,7 +35,7 @@ const style = {
   transform: "translate(-50%, -50%)",
   width: 400,
   bgcolor: "background.paper",
-  //   border: "2px solid #000",
+  borderRadius: 1,
   boxShadow: 24,
   p: 4,
 };
@@ -52,11 +52,15 @@ function Produk() {
   const [modalType, setModalType] = useState("");
   const handleModal = () => {
     setOpen(!open);
+    if (modalType === "new") {
+      setInput({
+        kodeBarang: "",
+        namaBarang: "",
+        harga: 0,
+        quantity: 0,
+      });
+    }
   };
-
-  useEffect(() => {
-    console.log(input);
-  }, [input]);
 
   const handleFocus = (event) => event.target.select();
 
@@ -106,6 +110,23 @@ function Produk() {
           console.log(err);
         });
     }
+  };
+
+  const handleDelete = () => {
+    axios
+      .delete(
+        `${process.env.REACT_APP_BASE_URL}/produk/${input.kodeBarang}`,
+        input
+      )
+      .then((result) => {
+        console.log(result.data);
+        // setRows(result.data);
+        handleModal();
+        getAll();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   const getAll = () => {
@@ -177,8 +198,8 @@ function Produk() {
                 <TableRow>
                   <TableCell>Kode Barang</TableCell>
                   <TableCell>Nama Barang</TableCell>
-                  <TableCell align="right">Harga</TableCell>
-                  <TableCell align="right">Qty</TableCell>
+                  <TableCell align="left">Harga</TableCell>
+                  <TableCell align="left">Qty</TableCell>
                   <TableCell align="right">Aksi</TableCell>
                 </TableRow>
               </TableHead>
@@ -192,8 +213,8 @@ function Produk() {
                       {row.kodeBarang}
                     </TableCell>
                     <TableCell>{row.namaBarang}</TableCell>
-                    <TableCell align="right">{row.harga}</TableCell>
-                    <TableCell align="right">{row.quantity}</TableCell>
+                    <TableCell align="left">Rp. {row.harga}</TableCell>
+                    <TableCell align="left">{row.quantity}</TableCell>
                     <TableCell align="right">
                       <IconButton
                         color="inherit"
@@ -205,7 +226,14 @@ function Produk() {
                       >
                         <EditIcon color="success" />
                       </IconButton>
-                      <IconButton color="inherit">
+                      <IconButton
+                        color="inherit"
+                        onClick={() => {
+                          setInput(row);
+                          setModalType("delete");
+                          handleModal();
+                        }}
+                      >
                         <DeleteIcon color="error" />
                       </IconButton>
                     </TableCell>
@@ -231,88 +259,123 @@ function Produk() {
           >
             Tambah Produk
           </Typography>
-          {/* <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-          </Typography> */}
-          <Grid
-            sx={{
-              flexDirection: "column",
-              display: "flex",
-              height: "auto",
-              width: "100%",
-            }}
-          >
-            <TextField
-              id="outlined-basic"
-              label="Kode Barang"
-              variant="outlined"
-              disabled={modalType === "new" ? false : true}
-              sx={{ marginBottom: 2 }}
-              size="small"
-              type="number"
-              value={input.kodeBarang}
-              onChange={(e) =>
-                setInput({ ...input, kodeBarang: e.target.value })
-              }
-              onFocus={handleFocus}
-            />
-            <TextField
-              id="outlined-basic"
-              label="Nama Barang"
-              variant="outlined"
-              size="small"
-              sx={{ marginBottom: 2 }}
-              value={input.namaBarang}
-              onChange={(e) =>
-                setInput({ ...input, namaBarang: e.target.value })
-              }
-            />
-            <CurrencyFormat
-              customInput={TextField}
-              thousandSeparator
-              prefix="Rp."
-              decimalScale={0}
-              placeholder="Rp.10.000.000"
-              label="Pembayaran"
-              size="small"
-              type="numeric"
-              sx={{ marginBottom: 2 }}
-              value={input.harga}
-              onChange={(e) => setInput({ ...input, harga: e.target.value })}
-            />
-            <TextField
-              id="outlined-basic"
-              label="Quantity"
-              variant="outlined"
-              size="small"
-              sx={{ marginBottom: 2 }}
-              type="number"
-              value={input.quantity}
-              onChange={(e) => setInput({ ...input, quantity: e.target.value })}
-              onFocus={handleFocus}
-            />
+          {modalType === "delete" && (
+            <div>
+              <Typography
+                id="modal-modal-description"
+                sx={{ mt: 2, mb: 2, textAlign: "center" }}
+              >
+                Anda yakin ingin menghapus "{input.namaBarang}"
+              </Typography>
+              <Grid
+                sx={{
+                  flexDirection: "column",
+                  display: "flex",
+                  height: "auto",
+                }}
+              >
+                <Button
+                  variant="contained"
+                  size="large"
+                  color="error"
+                  sx={{ marginBottom: 2 }}
+                  onClick={handleDelete}
+                >
+                  <SaveIcon />
+                  Hapus
+                </Button>
+                <Button onClick={handleModal} variant="outlined" size="large">
+                  Tutup
+                </Button>
+              </Grid>
+            </div>
+          )}
+          {modalType !== "delete" && (
             <Grid
               sx={{
                 flexDirection: "column",
                 display: "flex",
                 height: "auto",
+                width: "100%",
               }}
             >
-              <Button
-                variant="contained"
-                size="large"
-                color={modalType === "new" ? "primary" : "success"}
+              <TextField
+                id="outlined-basic"
+                label="Kode Barang"
+                variant="outlined"
+                disabled={modalType === "new" ? false : true}
                 sx={{ marginBottom: 2 }}
-                onClick={handleSubmit}
+                size="small"
+                type="number"
+                value={input.kodeBarang}
+                onChange={(e) =>
+                  setInput({ ...input, kodeBarang: e.target.value })
+                }
+                onFocus={handleFocus}
+              />
+              <TextField
+                id="outlined-basic"
+                label="Nama Barang"
+                variant="outlined"
+                size="small"
+                sx={{ marginBottom: 2 }}
+                value={input.namaBarang}
+                onChange={(e) =>
+                  setInput({ ...input, namaBarang: e.target.value })
+                }
+              />
+              <CurrencyFormat
+                customInput={TextField}
+                thousandSeparator
+                prefix="Rp."
+                decimalScale={0}
+                placeholder="Rp.10.000.000"
+                label="Harga"
+                size="small"
+                type="numeric"
+                sx={{ marginBottom: 2 }}
+                value={input.harga}
+                onValueChange={(values) => {
+                  const { formattedValue, value } = values;
+                  setInput({ ...input, harga: value });
+                }}
+              />
+              <TextField
+                id="outlined-basic"
+                label="Quantity"
+                variant="outlined"
+                size="small"
+                sx={{ marginBottom: 2 }}
+                type="number"
+                value={input.quantity}
+                onChange={(e) =>
+                  setInput({ ...input, quantity: e.target.value })
+                }
+                onFocus={handleFocus}
+              />
+              <Grid
+                sx={{
+                  flexDirection: "column",
+                  display: "flex",
+                  height: "auto",
+                }}
               >
-                <SaveIcon />
-                {modalType === "new" ? "Simpan" : "Perbarui"}
-              </Button>
-              <Button onClick={handleModal} variant="outlined" size="large">
-                Tutup
-              </Button>
+                <Button
+                  variant="contained"
+                  size="large"
+                  color={modalType === "new" ? "primary" : "success"}
+                  sx={{ marginBottom: 2 }}
+                  onClick={handleSubmit}
+                >
+                  <SaveIcon />
+                  {modalType === "new" ? "Simpan" : "Perbarui"}
+                </Button>
+                <Button onClick={handleModal} variant="outlined" size="large">
+                  Tutup
+                </Button>
+              </Grid>
             </Grid>
-          </Grid>
+          )}
         </Box>
       </Modal>
     </Grid>

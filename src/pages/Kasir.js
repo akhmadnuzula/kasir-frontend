@@ -14,6 +14,7 @@ import {
   styled,
   CssBaseline,
   Autocomplete,
+  Stack,
 } from "@mui/material";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import LocalPrintshopIcon from "@mui/icons-material/LocalPrintshop";
@@ -25,6 +26,7 @@ import axios from "axios";
 function Kasir() {
   const [rows, setRows] = useState([]);
   const [produk, setProduk] = useState([]);
+  const [input, setInput] = useState("");
 
   const handleNewAmount = (e) => {
     console.log(e);
@@ -60,6 +62,31 @@ function Kasir() {
       });
   };
 
+  const cekKode = () => {
+    axios
+      .get(`${process.env.REACT_APP_BASE_URL}/produk/${input}`)
+      .then((result) => {
+        console.log(result.data);
+        let data = result.data;
+        console.log(data);
+        console.log(rows);
+        var newRow = rows;
+        var arr = newRow.push({
+          kodeBarang: data.kodeBarang,
+          namaBarang: data.namaBarang,
+          harga: data.harga,
+          tanggal: data.tanggal,
+        });
+        console.log("keluar");
+        console.log(arr);
+        // setRows(arr);
+      })
+      .catch((err) => {
+        console.log(err);
+        alert("Produk tidak ditemukan");
+      });
+  };
+
   const handleFocus = (event) => event.target.select();
   return (
     <Grid container spacing={2}>
@@ -84,16 +111,32 @@ function Kasir() {
               <Typography variant="h4" sx={{ marginRight: 2, marginTop: 1 }}>
                 Pembelian
               </Typography>
-              <Autocomplete
-                disablePortal
-                id="combo-box-demo"
-                options={produk}
-                placeholder="0123456789"
-                sx={{ width: 300 }}
-                renderInput={(params) => (
-                  <TextField {...params} label="Kode Barang" />
-                )}
-              />
+              <Stack direction="row">
+                {/* <Autocomplete
+                  disablePortal
+                  id="combo-box-demo"
+                  options={produk}
+                  placeholder="0123456789"
+                  sx={{ width: 300, mr: 2 }}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Kode Barang" />
+                  )}
+                /> */}
+                <TextField
+                  id="outlined-basic"
+                  label="Outlined"
+                  variant="outlined"
+                  type="number"
+                  sx={{ mr: 2, width: 300 }}
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                  }}
+                />
+                <Button type="submit" variant="contained" onClick={cekKode}>
+                  Submit
+                </Button>
+              </Stack>
             </Grid>
             <TableContainer component={Paper}>
               <Table
@@ -148,7 +191,11 @@ function Kasir() {
             decimalScale={0}
             placeholder="Rp.10.000.000"
             label="Total Pembayaran"
-            onChange={handleNewAmount}
+            // onChange={handleNewAmount}
+            onValueChange={(values) => {
+              const { formattedValue, value } = values;
+              // setInput({ ...input, harga: value });
+            }}
             sx={{ marginBottom: 2, marginTop: 1 }}
           />
           <Typography variant="h5">Total Pembelian</Typography>

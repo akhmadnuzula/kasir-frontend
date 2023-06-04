@@ -8,6 +8,7 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PeopleIcon from "@mui/icons-material/People";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import LayersIcon from "@mui/icons-material/Layers";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import { Link } from "react-router-dom";
@@ -29,6 +30,12 @@ export const mainListItems = (
         <InventoryIcon />
       </ListItemIcon>
       <ListItemText primary="Produk" />
+    </ListItemButton>
+    <ListItemButton to="/barcode" component={Link}>
+      <ListItemIcon>
+        <QrCode2Icon />
+      </ListItemIcon>
+      <ListItemText primary="Barcode" />
     </ListItemButton>
   </React.Fragment>
 );
