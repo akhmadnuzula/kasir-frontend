@@ -115,10 +115,7 @@ function App() {
               Dashboard
             </Typography>
             <DateTime />
-            <IconButton color="inherit">
-              {/* <Badge badgeContent={4} color="secondary">
-                <NotificationsIcon />
-              </Badge> */}
+            <IconButton color="inherit" sx={{ borderRadius: 2 }}>
               <LogoutIcon />
               <span style={{ fontSize: 16 }}>Keluar</span>
             </IconButton>

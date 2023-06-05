@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Button,
-  ButtonGroup,
   Grid,
   Paper,
   Table,
@@ -11,30 +10,59 @@ import {
   TableRow,
   TextField,
   Typography,
-  styled,
-  CssBaseline,
-  Autocomplete,
   Stack,
+  IconButton,
+  Modal,
+  Box,
 } from "@mui/material";
-import TableCell, { tableCellClasses } from "@mui/material/TableCell";
+import TableCell from "@mui/material/TableCell";
 import LocalPrintshopIcon from "@mui/icons-material/LocalPrintshop";
-import SaveIcon from "@mui/icons-material/Save";
 import CurrencyFormat from "react-currency-format";
 import CloseIcon from "@mui/icons-material/Close";
+import InfoIcon from "@mui/icons-material/Info";
 import axios from "axios";
+
+const style = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  bgcolor: "background.paper",
+  boxShadow: 24,
+  borderRadius: 2,
+  p: 4,
+};
 
 function Kasir() {
   const [rows, setRows] = useState([]);
   const [produk, setProduk] = useState([]);
   const [input, setInput] = useState("");
+  const [inputPembayaran, setInputPembayaran] = useState(0);
+  const [kasir, setKasir] = useState({
+    pembayaran: 0,
+    pembelian: 0,
+    kembalian: 0,
+  });
 
-  const handleNewAmount = (e) => {
-    console.log(e);
-  };
+  const [open, setOpen] = React.useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   useEffect(() => {
-    console.log(produk);
-  }, [produk]);
+    let totalPembelian = rows.reduce((total, item) => total + item.total, 0);
+    let hitungKembalian = Number(kasir.pembayaran) - Number(kasir.pembelian);
+    setKasir({
+      ...kasir,
+      pembelian: totalPembelian,
+      kembalian: hitungKembalian,
+    });
+  }, [rows]);
+
+  useEffect(() => {
+    let hitungKembalian = Number(kasir.pembayaran) - Number(kasir.pembelian);
+    setKasir({ ...kasir, kembalian: hitungKembalian });
+  }, [inputPembayaran]);
+
   useEffect(() => {
     getProduk();
   }, []);
@@ -43,7 +71,6 @@ function Kasir() {
     axios
       .get(`${process.env.REACT_APP_BASE_URL}/produk`)
       .then((result) => {
-        // console.log(result.data);
         let data = result.data;
         let newProduk = [];
         data.map((item) => {
@@ -59,6 +86,7 @@ function Kasir() {
       })
       .catch((err) => {
         console.log(err);
+        alert("Refresh Halaman");
       });
   };
 
@@ -66,20 +94,25 @@ function Kasir() {
     axios
       .get(`${process.env.REACT_APP_BASE_URL}/produk/${input}`)
       .then((result) => {
-        console.log(result.data);
         let data = result.data;
-        console.log(data);
-        console.log(rows);
-        var newRow = rows;
-        var arr = newRow.push({
-          kodeBarang: data.kodeBarang,
-          namaBarang: data.namaBarang,
-          harga: data.harga,
-          tanggal: data.tanggal,
-        });
-        console.log("keluar");
-        console.log(arr);
-        // setRows(arr);
+        let newRow = [...rows];
+        let existingData = newRow.find(
+          (item) => item.kodeBarang === data.kodeBarang
+        );
+        if (existingData) {
+          existingData.quantity += 1;
+          existingData.total += data.harga;
+        } else {
+          newRow.push({
+            kodeBarang: data.kodeBarang,
+            namaBarang: data.namaBarang,
+            harga: data.harga,
+            tanggal: data.tanggal,
+            quantity: 1,
+            total: data.harga,
+          });
+        }
+        setRows(newRow);
       })
       .catch((err) => {
         console.log(err);
@@ -122,6 +155,14 @@ function Kasir() {
                     <TextField {...params} label="Kode Barang" />
                   )}
                 /> */}
+                <IconButton
+                  color="inherit"
+                  sx={{ borderRadius: 2, mr: 2 }}
+                  color="success"
+                  onClick={handleOpen}
+                >
+                  <InfoIcon />
+                </IconButton>
                 <TextField
                   id="outlined-basic"
                   label="Outlined"
@@ -132,6 +173,7 @@ function Kasir() {
                   onChange={(e) => {
                     setInput(e.target.value);
                   }}
+                  onFocus={handleFocus}
                 />
                 <Button type="submit" variant="contained" onClick={cekKode}>
                   Submit
@@ -154,20 +196,24 @@ function Kasir() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {rows.map((row) => (
-                    <TableRow
-                      key={row.name}
-                      sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                    >
-                      <TableCell component="th" scope="row">
-                        {row.name}
-                      </TableCell>
-                      <TableCell>{row.calories}</TableCell>
-                      <TableCell align="right">{row.fat}</TableCell>
-                      <TableCell align="right">{row.carbs}</TableCell>
-                      <TableCell align="right">{row.protein}</TableCell>
-                    </TableRow>
-                  ))}
+                  {rows.map((row) => {
+                    return (
+                      <TableRow
+                        key={row.kodeBarang}
+                        sx={{
+                          "&:last-child td, &:last-child th": { border: 0 },
+                        }}
+                      >
+                        <TableCell component="th" scope="row">
+                          {row.kodeBarang}
+                        </TableCell>
+                        <TableCell>{row.namaBarang}</TableCell>
+                        <TableCell align="right">{row.harga}</TableCell>
+                        <TableCell align="right">{row.quantity}</TableCell>
+                        <TableCell align="right">{row.total}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -194,8 +240,10 @@ function Kasir() {
             // onChange={handleNewAmount}
             onValueChange={(values) => {
               const { formattedValue, value } = values;
-              // setInput({ ...input, harga: value });
+              setKasir({ ...kasir, pembayaran: value });
+              setInputPembayaran(value);
             }}
+            // value={kasir.pembayaran}
             sx={{ marginBottom: 2, marginTop: 1 }}
           />
           <Typography variant="h5">Total Pembelian</Typography>
@@ -203,7 +251,7 @@ function Kasir() {
             variant="h3"
             sx={{ color: "error.main", marginBottom: 2 }}
           >
-            Rp. 52.000
+            Rp. {kasir.pembelian}
           </Typography>
 
           <Typography variant="h5">Total Kembalian</Typography>
@@ -211,7 +259,7 @@ function Kasir() {
             variant="h3"
             sx={{ color: "success.main", marginBottom: 2 }}
           >
-            Rp. 17.000
+            Rp. {kasir.kembalian}
           </Typography>
           <Button variant="contained" size="large" sx={{ marginBottom: 2 }}>
             <LocalPrintshopIcon />
@@ -223,6 +271,45 @@ function Kasir() {
           </Button>
         </Paper>
       </Grid>
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={style}>
+          <Typography
+            id="modal-modal-title"
+            variant="h6"
+            component="h2"
+            sx={{ mb: 2 }}
+          >
+            List Barang
+          </Typography>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Barcode</TableCell>
+                  <TableCell>Nama Barang</TableCell>
+                  <TableCell>Harga</TableCell>
+                  <TableCell>Quantity</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {produk.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{item.kodeBarang}</TableCell>
+                    <TableCell>{item.namaBarang}</TableCell>
+                    <TableCell>{item.harga}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </Modal>
     </Grid>
   );
 }
