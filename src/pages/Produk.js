@@ -334,7 +334,7 @@ function Produk() {
                 size="small"
                 type="numeric"
                 sx={{ marginBottom: 2 }}
-                value={input.harga}
+                // value={input.harga}
                 onValueChange={(values) => {
                   const { formattedValue, value } = values;
                   setInput({ ...input, harga: value });

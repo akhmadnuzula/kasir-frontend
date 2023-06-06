@@ -11,57 +11,42 @@ import {
   TextField,
   Typography,
   Stack,
-  IconButton,
-  Modal,
-  Box,
 } from "@mui/material";
 import TableCell from "@mui/material/TableCell";
-import LocalPrintshopIcon from "@mui/icons-material/LocalPrintshop";
 import CurrencyFormat from "react-currency-format";
 import CloseIcon from "@mui/icons-material/Close";
-import InfoIcon from "@mui/icons-material/Info";
 import axios from "axios";
-
-const style = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  bgcolor: "background.paper",
-  boxShadow: 24,
-  borderRadius: 2,
-  p: 4,
-};
+import InfoBarang from "../components/InfoBarang";
+import PrinterData from "../components/PrinterData";
 
 function Kasir() {
   const [rows, setRows] = useState([]);
   const [produk, setProduk] = useState([]);
   const [input, setInput] = useState("");
-  const [inputPembayaran, setInputPembayaran] = useState(0);
+  const [inputKembalian, setInputKembalian] = useState("");
   const [kasir, setKasir] = useState({
     pembayaran: 0,
     pembelian: 0,
     kembalian: 0,
   });
 
-  const [open, setOpen] = React.useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  useEffect(() => {
+    hitungKembalian(rows);
+  }, [rows]);
 
   useEffect(() => {
-    let totalPembelian = rows.reduce((total, item) => total + item.total, 0);
+    hitungKembalian(rows);
+  }, [inputKembalian]);
+
+  const hitungKembalian = (data) => {
+    let totalPembelian = data.reduce((total, item) => total + item.total, 0);
     let hitungKembalian = Number(kasir.pembayaran) - Number(kasir.pembelian);
     setKasir({
       ...kasir,
       pembelian: totalPembelian,
       kembalian: hitungKembalian,
     });
-  }, [rows]);
-
-  useEffect(() => {
-    let hitungKembalian = Number(kasir.pembayaran) - Number(kasir.pembelian);
-    setKasir({ ...kasir, kembalian: hitungKembalian });
-  }, [inputPembayaran]);
+  };
 
   useEffect(() => {
     getProduk();
@@ -91,33 +76,31 @@ function Kasir() {
   };
 
   const cekKode = () => {
-    axios
-      .get(`${process.env.REACT_APP_BASE_URL}/produk/${input}`)
-      .then((result) => {
-        let data = result.data;
-        let newRow = [...rows];
-        let existingData = newRow.find(
-          (item) => item.kodeBarang === data.kodeBarang
-        );
-        if (existingData) {
-          existingData.quantity += 1;
-          existingData.total += data.harga;
-        } else {
-          newRow.push({
-            kodeBarang: data.kodeBarang,
-            namaBarang: data.namaBarang,
-            harga: data.harga,
-            tanggal: data.tanggal,
-            quantity: 1,
-            total: data.harga,
-          });
-        }
-        setRows(newRow);
-      })
-      .catch((err) => {
-        console.log(err);
-        alert("Produk tidak ditemukan");
-      });
+    let filterData = produk.find((e) => e.kodeBarang === input);
+    if (filterData) {
+      let data = filterData;
+      let newRow = [...rows];
+      let existingData = newRow.find(
+        (item) => item.kodeBarang === data.kodeBarang
+      );
+      if (existingData) {
+        existingData.quantity += 1;
+        existingData.total += data.harga;
+      } else {
+        newRow.push({
+          kodeBarang: data.kodeBarang,
+          namaBarang: data.namaBarang,
+          harga: data.harga,
+          tanggal: data.tanggal,
+          quantity: 1,
+          total: data.harga,
+        });
+      }
+      setRows(newRow);
+      hitungKembalian(newRow);
+    } else {
+      alert("Produk tidak ditemukan");
+    }
   };
 
   const handleFocus = (event) => event.target.select();
@@ -145,27 +128,10 @@ function Kasir() {
                 Pembelian
               </Typography>
               <Stack direction="row">
-                {/* <Autocomplete
-                  disablePortal
-                  id="combo-box-demo"
-                  options={produk}
-                  placeholder="0123456789"
-                  sx={{ width: 300, mr: 2 }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Kode Barang" />
-                  )}
-                /> */}
-                <IconButton
-                  color="inherit"
-                  sx={{ borderRadius: 2, mr: 2 }}
-                  color="success"
-                  onClick={handleOpen}
-                >
-                  <InfoIcon />
-                </IconButton>
+                <InfoBarang dataProduk={produk} />
                 <TextField
                   id="outlined-basic"
-                  label="Outlined"
+                  label="Kode Barang"
                   variant="outlined"
                   type="number"
                   sx={{ mr: 2, width: 300 }}
@@ -181,11 +147,7 @@ function Kasir() {
               </Stack>
             </Grid>
             <TableContainer component={Paper}>
-              <Table
-                sx={{ minWidth: 650 }}
-                size="small"
-                aria-label="simple table"
-              >
+              <Table>
                 <TableHead>
                   <TableRow>
                     <TableCell>Kode Barang</TableCell>
@@ -241,7 +203,7 @@ function Kasir() {
             onValueChange={(values) => {
               const { formattedValue, value } = values;
               setKasir({ ...kasir, pembayaran: value });
-              setInputPembayaran(value);
+              setInputKembalian(value);
             }}
             // value={kasir.pembayaran}
             sx={{ marginBottom: 2, marginTop: 1 }}
@@ -261,55 +223,13 @@ function Kasir() {
           >
             Rp. {kasir.kembalian}
           </Typography>
-          <Button variant="contained" size="large" sx={{ marginBottom: 2 }}>
-            <LocalPrintshopIcon />
-            Cetak
-          </Button>
+          <PrinterData />
           <Button variant="outlined" size="large" color="error">
             <CloseIcon />
             Bersihkan
           </Button>
         </Paper>
       </Grid>
-      <Modal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-      >
-        <Box sx={style}>
-          <Typography
-            id="modal-modal-title"
-            variant="h6"
-            component="h2"
-            sx={{ mb: 2 }}
-          >
-            List Barang
-          </Typography>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Barcode</TableCell>
-                  <TableCell>Nama Barang</TableCell>
-                  <TableCell>Harga</TableCell>
-                  <TableCell>Quantity</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {produk.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{item.kodeBarang}</TableCell>
-                    <TableCell>{item.namaBarang}</TableCell>
-                    <TableCell>{item.harga}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-      </Modal>
     </Grid>
   );
 }
