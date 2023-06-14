@@ -200,7 +200,6 @@ function Kasir() {
                   id="outlined-basic"
                   label="Kode Barang"
                   variant="outlined"
-                  type="number"
                   sx={{ mr: 2, width: 300 }}
                   value={input}
                   onChange={(e) => {

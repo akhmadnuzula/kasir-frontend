@@ -14,6 +14,13 @@ const PrintData = ({ kasir, keranjang }) => {
     const content = printContentRef.current.innerHTML;
 
     const printWindow = window.open("", "_blank", "width=600,height=800");
+    if (printWindow !== null) {
+      // Access properties or call methods on the printWindow object
+      printWindow.print();
+    } else {
+      // Handle the case when printWindow is null
+      console.log("Izinkan popup terlebih dahulu.");
+    }
     printWindow.document.open();
     printWindow.document.write(`
     <html>

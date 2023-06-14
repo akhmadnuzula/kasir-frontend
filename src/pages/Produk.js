@@ -52,6 +52,7 @@ function Produk() {
   });
   const [rows, setRows] = useState([]);
   const [modalType, setModalType] = useState("");
+  const [harga, setHarga] = useState("");
   const handleModal = () => {
     setOpen(!open);
     if (modalType === "new") {
@@ -108,6 +109,7 @@ function Produk() {
           console.log(result.data);
           // setRows(result.data);
           getAll();
+          handleModal();
         })
         .catch((err) => {
           console.log(err);
@@ -223,6 +225,7 @@ function Produk() {
                         color="inherit"
                         onClick={() => {
                           setInput(row);
+                          setHarga(row.harga);
                           setModalType("edit");
                           handleModal();
                         }}
@@ -309,7 +312,6 @@ function Produk() {
                 disabled={modalType === "new" ? false : true}
                 sx={{ marginBottom: 2 }}
                 size="small"
-                type="number"
                 value={input.kodeBarang}
                 onChange={(e) =>
                   setInput({ ...input, kodeBarang: e.target.value })
@@ -337,10 +339,11 @@ function Produk() {
                 size="small"
                 type="numeric"
                 sx={{ marginBottom: 2 }}
-                // value={input.harga}
+                value={input.harga}
                 onValueChange={(values) => {
                   const { formattedValue, value } = values;
                   setInput({ ...input, harga: value });
+                  setHarga(value);
                 }}
               />
               <TextField
@@ -351,9 +354,9 @@ function Produk() {
                 sx={{ marginBottom: 2 }}
                 type="number"
                 value={input.quantity}
-                onChange={(e) =>
-                  setInput({ ...input, quantity: e.target.value })
-                }
+                onChange={(e) => {
+                  setInput({ ...input, quantity: e.target.value });
+                }}
                 onFocus={handleFocus}
               />
               <Grid
