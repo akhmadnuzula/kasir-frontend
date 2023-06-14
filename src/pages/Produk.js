@@ -26,6 +26,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CurrencyFormat from "react-currency-format";
 import axios from "axios";
+import moment from "moment";
 // import { createProduk } from "../databases";
 
 const style = {
@@ -47,6 +48,7 @@ function Produk() {
     namaBarang: "",
     harga: 0,
     quantity: 0,
+    tanggal: moment().format(),
   });
   const [rows, setRows] = useState([]);
   const [modalType, setModalType] = useState("");
@@ -58,6 +60,7 @@ function Produk() {
         namaBarang: "",
         harga: 0,
         quantity: 0,
+        tanggal: moment().format(),
       });
     }
   };

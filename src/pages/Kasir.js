@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Button,
   Grid,
@@ -11,10 +11,14 @@ import {
   TextField,
   Typography,
   Stack,
+  IconButton,
 } from "@mui/material";
+import moment from "moment";
 import TableCell from "@mui/material/TableCell";
 import CurrencyFormat from "react-currency-format";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import axios from "axios";
 import InfoBarang from "../components/InfoBarang";
 import PrinterData from "../components/PrinterData";
@@ -24,11 +28,16 @@ function Kasir() {
   const [produk, setProduk] = useState([]);
   const [input, setInput] = useState("");
   const [inputKembalian, setInputKembalian] = useState("");
+  const [kodePembelian, setKodePembelian] = useState(`${moment().valueOf()}`);
   const [kasir, setKasir] = useState({
-    pembayaran: 0,
-    pembelian: 0,
-    kembalian: 0,
+    kodePembelian: kodePembelian,
+    totalPembayaran: 0,
+    totalPembelian: 0,
+    totalKembalian: 0,
+    tanggalPembelian: moment().format(),
   });
+
+  const inputRef = useRef(null);
 
   useEffect(() => {
     hitungKembalian(rows);
@@ -39,12 +48,16 @@ function Kasir() {
   }, [inputKembalian]);
 
   const hitungKembalian = (data) => {
-    let totalPembelian = data.reduce((total, item) => total + item.total, 0);
-    let hitungKembalian = Number(kasir.pembayaran) - Number(kasir.pembelian);
+    const totalPembelian = data.reduce(
+      (totalHarga, item) => totalHarga + item.totalHarga,
+      0
+    );
+    const hitungKembalian =
+      Number(kasir.totalPembayaran) - Number(kasir.totalPembelian);
     setKasir({
       ...kasir,
-      pembelian: totalPembelian,
-      kembalian: hitungKembalian,
+      totalPembelian: totalPembelian,
+      totalKembalian: hitungKembalian,
     });
   };
 
@@ -56,8 +69,8 @@ function Kasir() {
     axios
       .get(`${process.env.REACT_APP_BASE_URL}/produk`)
       .then((result) => {
-        let data = result.data;
-        let newProduk = [];
+        const data = result.data;
+        const newProduk = [];
         data.map((item) => {
           newProduk.push({
             harga: item.harga,
@@ -76,31 +89,85 @@ function Kasir() {
   };
 
   const cekKode = () => {
-    let filterData = produk.find((e) => e.kodeBarang === input);
+    const filterData = produk.find((e) => e.kodeBarang === input);
     if (filterData) {
-      let data = filterData;
-      let newRow = [...rows];
-      let existingData = newRow.find(
+      const data = filterData;
+      const newRow = [...rows];
+      const existingData = newRow.find(
         (item) => item.kodeBarang === data.kodeBarang
       );
       if (existingData) {
-        existingData.quantity += 1;
-        existingData.total += data.harga;
+        existingData.quantity = Number(existingData.quantity) + 1;
+        existingData.totalHarga += data.harga;
       } else {
         newRow.push({
+          kodePembelian: kodePembelian,
           kodeBarang: data.kodeBarang,
           namaBarang: data.namaBarang,
           harga: data.harga,
-          tanggal: data.tanggal,
           quantity: 1,
-          total: data.harga,
+          totalHarga: data.harga,
         });
       }
       setRows(newRow);
       hitungKembalian(newRow);
+      setInput("");
+      inputRef.current.focus();
     } else {
       alert("Produk tidak ditemukan");
     }
+  };
+
+  const handleClear = () => {
+    const data = { keranjang: rows, pembelian: kasir };
+    axios
+      .post(`${process.env.REACT_APP_BASE_URL}/kasir`, data)
+      .then((result) => {
+        if (result.status === 201) {
+          const kodeBaru = moment().valueOf();
+          setKodePembelian(kodeBaru);
+          setKasir({
+            kodePembelian: kodeBaru,
+            totalPembayaran: 0,
+            totalPembelian: 0,
+            totalKembalian: 0,
+            tanggalPembelian: moment().format(),
+          });
+          setRows([]);
+          setInput("");
+          setInputKembalian("");
+          inputRef.current.focus();
+        } else {
+          alert("Koneksi bermasalah");
+        }
+      })
+      .catch((err) => {
+        alert("Koneksi bermasalah");
+      });
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      // Call your function here
+      console.log("Enter key pressed!");
+      cekKode();
+    }
+  };
+
+  const handleChangeRow = (kodeBarang, e) => {
+    const quantity = e.target.value;
+    const newRow = [...rows];
+    const findRow = newRow.find((e) => e.kodeBarang === kodeBarang);
+    findRow.quantity = quantity;
+    findRow.totalHarga = Number(findRow.harga) * Number(quantity);
+    setRows(newRow);
+    hitungKembalian(newRow);
+  };
+
+  const handleRemove = (kodeBarang) => {
+    const updatedRows = rows.filter((row) => row.kodeBarang !== kodeBarang);
+    setRows(updatedRows);
+    hitungKembalian(updatedRows);
   };
 
   const handleFocus = (event) => event.target.select();
@@ -140,6 +207,8 @@ function Kasir() {
                     setInput(e.target.value);
                   }}
                   onFocus={handleFocus}
+                  inputRef={inputRef}
+                  onKeyDown={handleKeyDown}
                 />
                 <Button type="submit" variant="contained" onClick={cekKode}>
                   Submit
@@ -155,6 +224,7 @@ function Kasir() {
                     <TableCell align="right">Harga</TableCell>
                     <TableCell align="right">Qty</TableCell>
                     <TableCell align="right">Sub Total</TableCell>
+                    <TableCell align="right">Aksi</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -171,8 +241,29 @@ function Kasir() {
                         </TableCell>
                         <TableCell>{row.namaBarang}</TableCell>
                         <TableCell align="right">{row.harga}</TableCell>
-                        <TableCell align="right">{row.quantity}</TableCell>
-                        <TableCell align="right">{row.total}</TableCell>
+                        <TableCell align="right">
+                          <TextField
+                            id="outlined-basic"
+                            label="Kode Barang"
+                            variant="outlined"
+                            type="number"
+                            size="small"
+                            sx={{ width: 80 }}
+                            value={row.quantity}
+                            onChange={(values) => {
+                              handleChangeRow(row.kodeBarang, values);
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">{row.totalHarga}</TableCell>
+                        <TableCell align="right">
+                          <IconButton
+                            color="error"
+                            onClick={() => handleRemove(row.kodeBarang)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -200,9 +291,10 @@ function Kasir() {
             placeholder="Rp.10.000.000"
             label="Total Pembayaran"
             // onChange={handleNewAmount}
+            value={inputKembalian}
             onValueChange={(values) => {
               const { formattedValue, value } = values;
-              setKasir({ ...kasir, pembayaran: value });
+              setKasir({ ...kasir, totalPembayaran: value });
               setInputKembalian(value);
             }}
             // value={kasir.pembayaran}
@@ -213,20 +305,25 @@ function Kasir() {
             variant="h3"
             sx={{ color: "error.main", marginBottom: 2 }}
           >
-            Rp. {kasir.pembelian}
+            Rp. {kasir.totalPembelian}
           </Typography>
 
           <Typography variant="h5">Total Kembalian</Typography>
           <Typography
             variant="h3"
-            sx={{ color: "success.main", marginBottom: 2 }}
+            sx={{ color: "success.main", marginBottom: 2, marginRight: 1 }}
           >
-            Rp. {kasir.kembalian}
+            Rp. {kasir.totalKembalian}
           </Typography>
-          <PrinterData />
-          <Button variant="outlined" size="large" color="error">
-            <CloseIcon />
-            Bersihkan
+          <PrinterData kasir={kasir} keranjang={rows} />
+          <Button
+            variant="outlined"
+            size="large"
+            color="error"
+            onClick={handleClear}
+          >
+            <RestartAltIcon sx={{ marginRight: 1 }} />
+            Bersihkan Pembelian
           </Button>
         </Paper>
       </Grid>
