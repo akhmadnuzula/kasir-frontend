@@ -14,13 +14,6 @@ const PrintData = ({ kasir, keranjang }) => {
     const content = printContentRef.current.innerHTML;
 
     const printWindow = window.open("", "_blank", "width=600,height=800");
-    if (printWindow !== null) {
-      // Access properties or call methods on the printWindow object
-      printWindow.print();
-    } else {
-      // Handle the case when printWindow is null
-      console.log("Izinkan popup terlebih dahulu.");
-    }
     printWindow.document.open();
     printWindow.document.write(`
     <html>
@@ -32,12 +25,14 @@ const PrintData = ({ kasir, keranjang }) => {
               visibility: hidden;
             }
             .print-content {
+              width: 58mm;
+              padding: 3mm;
               visibility: visible;
               height: auto;
             }
           }
           @page {
-            size: 80mm;
+            size: 58mm;
             margin: 0;
           }
           body {
@@ -48,8 +43,9 @@ const PrintData = ({ kasir, keranjang }) => {
           }
           
           p {
+            font-size: 12px;
             text-align: center;
-            margin: 5px 0;
+            margin: 5px;
           }
           
           table {
@@ -62,6 +58,7 @@ const PrintData = ({ kasir, keranjang }) => {
             padding: 5px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            font-size: 12px;
           }
           
           .total {
@@ -97,7 +94,7 @@ const PrintData = ({ kasir, keranjang }) => {
         Cetak
       </Button>
       <div style={{ display: "none" }} ref={printContentRef}>
-        <h1 style={styles.title}>Toko XYZ</h1>
+        <h3 style={styles.title}>Toko XYZ</h3>
         <p>Jl. Contoh No. 123</p>
         <p>Tanggal: {moment().format("YYYY-MM-DD HH:mm:ss")}</p>
 
@@ -106,7 +103,7 @@ const PrintData = ({ kasir, keranjang }) => {
             <tr>
               <th>Nama Produk</th>
               <th>Qty</th>
-              <th>Harga</th>
+              <th style={{ textAlign: "right" }}>Harga</th>
             </tr>
           </thead>
           <tbody>
@@ -116,7 +113,7 @@ const PrintData = ({ kasir, keranjang }) => {
                   <tr>
                     <td>{item.namaBarang}</td>
                     <td>{item.quantity}</td>
-                    <td>Rp{item.harga}</td>
+                    <td style={{ textAlign: "right" }}>Rp{item.harga}</td>
                   </tr>
                 );
               })}
