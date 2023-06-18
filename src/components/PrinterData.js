@@ -26,7 +26,7 @@ const PrintData = ({ kasir, keranjang }) => {
             }
             .print-content {
               width: 58mm;
-              padding: 3mm;
+              padding: 5mm;
               visibility: visible;
               height: auto;
             }
@@ -55,7 +55,6 @@ const PrintData = ({ kasir, keranjang }) => {
           }
           
           th, td {
-            padding: 5px;
             text-align: left;
             border-bottom: 1px solid #ddd;
             font-size: 12px;
