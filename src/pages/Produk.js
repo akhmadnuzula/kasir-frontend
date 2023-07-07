@@ -28,6 +28,15 @@ import CurrencyFormat from "react-currency-format";
 import axios from "axios";
 import moment from "moment";
 // import { createProduk } from "../databases";
+import RowProduct from "../components/RowProduct";
+import PropTypes from "prop-types";
+import { useTheme } from "@mui/material/styles";
+import TableFooter from "@mui/material/TableFooter";
+import TablePagination from "@mui/material/TablePagination";
+import FirstPageIcon from "@mui/icons-material/FirstPage";
+import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
+import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
+import LastPageIcon from "@mui/icons-material/LastPage";
 
 const style = {
   position: "absolute",
@@ -41,6 +50,75 @@ const style = {
   p: 4,
 };
 
+function TablePaginationActions(props) {
+  const theme = useTheme();
+  const { count, page, rowsPerPage, onPageChange } = props;
+
+  const handleFirstPageButtonClick = (event) => {
+    onPageChange(event, 0);
+  };
+
+  const handleBackButtonClick = (event) => {
+    onPageChange(event, page - 1);
+  };
+
+  const handleNextButtonClick = (event) => {
+    onPageChange(event, page + 1);
+  };
+
+  const handleLastPageButtonClick = (event) => {
+    onPageChange(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
+  };
+
+  return (
+    <Box sx={{ flexShrink: 0, ml: 2.5 }}>
+      <IconButton
+        onClick={handleFirstPageButtonClick}
+        disabled={page === 0}
+        aria-label="first page"
+      >
+        {theme.direction === "rtl" ? <LastPageIcon /> : <FirstPageIcon />}
+      </IconButton>
+      <IconButton
+        onClick={handleBackButtonClick}
+        disabled={page === 0}
+        aria-label="previous page"
+      >
+        {theme.direction === "rtl" ? (
+          <KeyboardArrowRight />
+        ) : (
+          <KeyboardArrowLeft />
+        )}
+      </IconButton>
+      <IconButton
+        onClick={handleNextButtonClick}
+        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+        aria-label="next page"
+      >
+        {theme.direction === "rtl" ? (
+          <KeyboardArrowLeft />
+        ) : (
+          <KeyboardArrowRight />
+        )}
+      </IconButton>
+      <IconButton
+        onClick={handleLastPageButtonClick}
+        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+        aria-label="last page"
+      >
+        {theme.direction === "rtl" ? <FirstPageIcon /> : <LastPageIcon />}
+      </IconButton>
+    </Box>
+  );
+}
+
+TablePaginationActions.propTypes = {
+  count: PropTypes.number.isRequired,
+  onPageChange: PropTypes.func.isRequired,
+  page: PropTypes.number.isRequired,
+  rowsPerPage: PropTypes.number.isRequired,
+};
+
 function Produk() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState({
@@ -51,6 +129,7 @@ function Produk() {
     tanggal: moment().format(),
   });
   const [rows, setRows] = useState([]);
+  const [saveRows, setSaveRows] = useState([]);
   const [modalType, setModalType] = useState("");
   const [harga, setHarga] = useState("");
   const handleModal = () => {
@@ -78,8 +157,9 @@ function Produk() {
       input.quantity === ""
     ) {
       return false;
+    } else {
+      return true;
     }
-    return true;
   };
 
   const handleSubmit = () => {
@@ -117,17 +197,13 @@ function Produk() {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = (kodeBarang) => {
     axios
-      .delete(
-        `${process.env.REACT_APP_BASE_URL}/produk/${input.kodeBarang}`,
-        input
-      )
+      .delete(`${process.env.REACT_APP_BASE_URL}/produk/${kodeBarang}`)
       .then((result) => {
         console.log(result.data);
         // setRows(result.data);
-        handleModal();
-        getAll();
+        refreshRows();
       })
       .catch((err) => {
         console.log(err);
@@ -141,6 +217,7 @@ function Produk() {
       .then((result) => {
         console.log(result.data);
         setRows(result.data);
+        setSaveRows(result.data);
       })
       .catch((err) => {
         console.log(err);
@@ -148,9 +225,55 @@ function Produk() {
   };
 
   useEffect(() => {
-    getAll();
+    refreshRows();
   }, []);
 
+  const refreshRows = () => {
+    getAll();
+  };
+
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+
+  // Avoid a layout jump when reaching the last page with empty rows.
+  const emptyRows =
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const onPressButton = ({ kodeBarang, namaBarang }) => {
+    handleDelete(kodeBarang);
+    refreshRows();
+    alert(`Data barang ${namaBarang} berhasil di hapus`);
+  };
+
+  const [search, setSearch] = useState("");
+
+  const handleChange = (e) => {
+    var value = e.target.value;
+    setSearch(value);
+    if (value !== "") {
+      let filter = saveRows.filter((e) =>
+        e.namaBarang.toLowerCase().includes(value.toLowerCase())
+      );
+      if (filter.length > 0) {
+        setRows(filter);
+      } else {
+        setRows([]);
+      }
+    } else {
+      refreshRows();
+    }
+  };
   return (
     <Grid container spacing={1}>
       <Grid item xs={12} md={12} lg={12}>
@@ -167,87 +290,120 @@ function Produk() {
             xs={12}
             md={12}
             lg={12}
-            sx={{ display: "flex", flexDirection: "row", height: "auto" }}
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              height: "auto",
+              justifyContent: "space-between",
+            }}
           >
-            <Typography variant="h4" sx={{ marginBottom: 2, marginRight: 2 }}>
-              Produk
-            </Typography>
             <Grid
               sx={{
                 display: "flex",
                 flexDirection: "row",
-                alignItems: "center",
+                height: "auto",
               }}
             >
-              <Button
-                variant="contained"
-                size="small"
-                sx={{ marginBottom: 2 }}
-                onClick={() => {
-                  setModalType("new");
-                  handleModal();
+              <Typography variant="h4" sx={{ marginBottom: 2, marginRight: 2 }}>
+                Produk
+              </Typography>
+              <Grid
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
                 }}
               >
-                <AddIcon />{" "}
-                <Typography sx={{ marginTop: 0.5 }}>Tambah Produk</Typography>
-              </Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  sx={{ marginBottom: 2 }}
+                  onClick={() => {
+                    setModalType("new");
+                    handleModal();
+                  }}
+                >
+                  <AddIcon />{" "}
+                  <Typography sx={{ marginTop: 0.5 }}>Tambah Produk</Typography>
+                </Button>
+              </Grid>
             </Grid>
-          </Grid>
-          <TableContainer component={Paper}>
-            <Table
-              sx={{ minWidth: 650 }}
+            <TextField
+              id="outlined-basic"
+              label="Cari Nama Barang"
+              variant="outlined"
               size="small"
-              aria-label="simple table"
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>Kode Barang</TableCell>
-                  <TableCell>Nama Barang</TableCell>
-                  <TableCell align="left">Harga</TableCell>
-                  <TableCell align="left">Qty</TableCell>
-                  <TableCell align="right">Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow
-                    key={row.kodeBarang}
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                  >
-                    <TableCell component="th" scope="row">
-                      {row.kodeBarang}
-                    </TableCell>
-                    <TableCell>{row.namaBarang}</TableCell>
-                    <TableCell align="left">Rp. {row.harga}</TableCell>
-                    <TableCell align="left">{row.quantity}</TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        color="inherit"
-                        onClick={() => {
-                          setInput(row);
-                          setHarga(row.harga);
-                          setModalType("edit");
-                          handleModal();
-                        }}
-                      >
-                        <EditIcon color="success" />
-                      </IconButton>
-                      <IconButton
-                        color="inherit"
-                        onClick={() => {
-                          setInput(row);
-                          setModalType("delete");
-                          handleModal();
-                        }}
-                      >
-                        <DeleteIcon color="error" />
-                      </IconButton>
+              value={search}
+              sx={{ minWidth: 200 }}
+              onChange={(e) => {
+                handleChange(e);
+              }}
+              onFocus={handleFocus}
+            />
+          </Grid>
+          <Paper sx={{ width: "100%", overflow: "hidden" }}>
+            <TableContainer sx={{ maxHeight: 350 }}>
+              <Table
+                stickyHeader
+                sx={{ minWidth: 650 }}
+                size="small"
+                aria-label="simple table"
+              >
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Kode Barang</TableCell>
+                    <TableCell>Nama Barang</TableCell>
+                    <TableCell align="left">Harga</TableCell>
+                    <TableCell align="left">Qty</TableCell>
+                    <TableCell align="right" colSpan={2}>
+                      Aksi
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {(rowsPerPage > 0
+                    ? rows.slice(
+                        page * rowsPerPage,
+                        page * rowsPerPage + rowsPerPage
+                      )
+                    : rows
+                  ).map((row) => (
+                    <TableRow
+                      key={row.kodeBarang}
+                      sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                    >
+                      <RowProduct
+                        data={row}
+                        onPressButton={() => onPressButton(row)}
+                        onSaveButton={() => refreshRows()}
+                      />
+                    </TableRow>
+                  ))}
+                  {emptyRows > 0 && (
+                    <TableRow style={{ height: 53 * emptyRows }}>
+                      <TableCell colSpan={6} />
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, { label: "All", value: -1 }]}
+              colSpan={3}
+              count={rows.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              SelectProps={{
+                inputProps: {
+                  "aria-label": "rows per page",
+                },
+                native: true,
+              }}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              ActionsComponent={TablePaginationActions}
+            />
+          </Paper>
         </Paper>
       </Grid>
       <Modal

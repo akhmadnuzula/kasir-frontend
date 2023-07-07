@@ -12,6 +12,7 @@ import {
   Typography,
   Stack,
   IconButton,
+  Box,
 } from "@mui/material";
 import moment from "moment";
 import TableCell from "@mui/material/TableCell";
@@ -200,7 +201,7 @@ function Kasir() {
                   id="outlined-basic"
                   label="Kode Barang"
                   variant="outlined"
-                  sx={{ mr: 2, width: 300 }}
+                  sx={{ mr: 2, width: "auto" }}
                   value={input}
                   onChange={(e) => {
                     setInput(e.target.value);
@@ -301,7 +302,7 @@ function Kasir() {
           />
           <Typography variant="h5">Total Pembelian</Typography>
           <Typography
-            variant="h3"
+            variant="h4"
             sx={{ color: "error.main", marginBottom: 2 }}
           >
             Rp. {kasir.totalPembelian}
@@ -309,7 +310,7 @@ function Kasir() {
 
           <Typography variant="h5">Total Kembalian</Typography>
           <Typography
-            variant="h3"
+            variant="h4"
             sx={{ color: "success.main", marginBottom: 2, marginRight: 1 }}
           >
             Rp. {kasir.totalKembalian}
@@ -322,7 +323,7 @@ function Kasir() {
             onClick={handleClear}
           >
             <RestartAltIcon sx={{ marginRight: 1 }} />
-            Bersihkan Pembelian
+            Bersihkan
           </Button>
         </Paper>
       </Grid>

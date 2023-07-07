@@ -93,8 +93,8 @@ const PrintData = ({ kasir, keranjang }) => {
         Cetak
       </Button>
       <div style={{ display: "none" }} ref={printContentRef}>
-        <h3 style={styles.title}>Toko XYZ</h3>
-        <p>Jl. Contoh No. 123</p>
+        <h3 style={styles.title}>REZA</h3>
+        <p>Pasar Panas, Kasiau</p>
         <p>Tanggal: {moment().format("YYYY-MM-DD HH:mm:ss")}</p>
 
         <table>

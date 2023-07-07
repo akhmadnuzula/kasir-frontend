@@ -99,7 +99,7 @@ function InfoBarang({ dataProduk }) {
               onFocus={handleFocus}
             />
           </Grid>
-          <TableContainer component={Paper} sx={{ maxHeight: 500, width: 720 }}>
+          <TableContainer component={Paper} sx={{ maxHeight: 350, width: 720 }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
