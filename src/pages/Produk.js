@@ -37,6 +37,7 @@ import FirstPageIcon from "@mui/icons-material/FirstPage";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import LastPageIcon from "@mui/icons-material/LastPage";
+import AutorenewIcon from "@mui/icons-material/Autorenew";
 
 const style = {
   position: "absolute",
@@ -124,7 +125,7 @@ function Produk() {
   const [input, setInput] = useState({
     kodeBarang: "",
     namaBarang: "",
-    harga: 0,
+    harga: "",
     quantity: 0,
     tanggal: moment().format(),
   });
@@ -132,20 +133,32 @@ function Produk() {
   const [saveRows, setSaveRows] = useState([]);
   const [modalType, setModalType] = useState("");
   const [harga, setHarga] = useState("");
+  const [message, setMessage] = useState("");
   const handleModal = () => {
     setOpen(!open);
     if (modalType === "new") {
-      setInput({
-        kodeBarang: "",
-        namaBarang: "",
-        harga: 0,
-        quantity: 0,
-        tanggal: moment().format(),
-      });
+      clearInput();
     }
   };
 
   const handleFocus = (event) => event.target.select();
+
+  const clearInput = () => {
+    setInput({
+      kodeBarang: "",
+      namaBarang: "",
+      harga: "",
+      quantity: 0,
+      tanggal: moment().format(),
+    });
+  };
+
+  const handleMessage = (msg) => {
+    setMessage(msg);
+    setTimeout(() => {
+      setMessage("");
+    }, 3000);
+  };
 
   const validate = () => {
     if (
@@ -173,10 +186,13 @@ function Produk() {
         .then((result) => {
           console.log(result.data);
           // setRows(result.data);
+          handleMessage("Berhasil menambah produk");
           getAll();
+          clearInput();
         })
         .catch((err) => {
           console.log(err);
+          handleMessage("Gagal menambah produk");
         });
     } else {
       // sampai sini
@@ -188,11 +204,13 @@ function Produk() {
         .then((result) => {
           console.log(result.data);
           // setRows(result.data);
+          handleMessage("Berhasil memperbarui produk");
           getAll();
           handleModal();
         })
         .catch((err) => {
           console.log(err);
+          handleMessage("Gagal memperbarui produk");
         });
     }
   };
@@ -274,6 +292,27 @@ function Produk() {
       refreshRows();
     }
   };
+
+  function generateRandomChar() {
+    var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    var randomIndex = Math.floor(Math.random() * characters.length);
+    return characters.charAt(randomIndex);
+  }
+
+  // Fungsi untuk menghasilkan string acak dengan panjang tertentu
+  function generateRandomString(length) {
+    var randomString = "";
+    for (var i = 0; i < length; i++) {
+      randomString += generateRandomChar();
+    }
+    return randomString;
+  }
+
+  const handleGanarate = () => {
+    const randomString = generateRandomString(10);
+    setInput({ ...input, kodeBarang: randomString });
+  };
+
   return (
     <Grid container spacing={1}>
       <Grid item xs={12} md={12} lg={12}>
@@ -461,19 +500,32 @@ function Produk() {
                 width: "100%",
               }}
             >
-              <TextField
-                id="outlined-basic"
-                label="Kode Barang"
-                variant="outlined"
-                disabled={modalType === "new" ? false : true}
-                sx={{ marginBottom: 2 }}
-                size="small"
-                value={input.kodeBarang}
-                onChange={(e) =>
-                  setInput({ ...input, kodeBarang: e.target.value })
-                }
-                onFocus={handleFocus}
-              />
+              <Grid
+                sx={{
+                  display: "flex",
+                  // justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 2,
+                  width: "100%",
+                }}
+              >
+                <TextField
+                  id="outlined-basic"
+                  label="Kode Barang"
+                  variant="outlined"
+                  disabled={modalType === "new" ? false : true}
+                  size="small"
+                  sx={{ width: "100%" }}
+                  value={input.kodeBarang}
+                  onChange={(e) =>
+                    setInput({ ...input, kodeBarang: e.target.value })
+                  }
+                  onFocus={handleFocus}
+                />
+                <IconButton onClick={() => handleGanarate()}>
+                  <AutorenewIcon />
+                </IconButton>
+              </Grid>
               <TextField
                 id="outlined-basic"
                 label="Nama Barang"
@@ -522,6 +574,7 @@ function Produk() {
                   height: "auto",
                 }}
               >
+                {message}
                 <Button
                   variant="contained"
                   size="large"
