@@ -171,6 +171,36 @@ function Kasir() {
     hitungKembalian(updatedRows);
   };
 
+  const handleAdd = (item) => {
+    const filterData = produk.find((e) => e.kodeBarang === item.kodeBarang);
+    if (filterData) {
+      const data = filterData;
+      const newRow = [...rows];
+      const existingData = newRow.find(
+        (item) => item.kodeBarang === data.kodeBarang
+      );
+      if (existingData) {
+        existingData.quantity = Number(existingData.quantity) + 1;
+        existingData.totalHarga += data.harga;
+      } else {
+        newRow.push({
+          kodePembelian: kodePembelian,
+          kodeBarang: data.kodeBarang,
+          namaBarang: data.namaBarang,
+          harga: data.harga,
+          quantity: 1,
+          totalHarga: data.harga,
+        });
+      }
+      setRows(newRow);
+      hitungKembalian(newRow);
+      setInput("");
+      inputRef.current.focus();
+    } else {
+      alert("Produk tidak ditemukan");
+    }
+  };
+
   const handleFocus = (event) => event.target.select();
   return (
     <Grid container spacing={2}>
@@ -196,7 +226,10 @@ function Kasir() {
                 Pembelian
               </Typography>
               <Stack direction="row">
-                <InfoBarang dataProduk={produk} />
+                <InfoBarang
+                  dataProduk={produk}
+                  addbuttonPress={(e) => handleAdd(e)}
+                />
                 <TextField
                   id="outlined-basic"
                   label="Kode Barang"

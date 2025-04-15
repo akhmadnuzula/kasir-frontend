@@ -11,7 +11,6 @@ import {
   TableRow,
   TextField,
   Typography,
-  Stack,
   Modal,
   Box,
   TableCell,
@@ -29,7 +28,7 @@ const style = {
   p: 4,
 };
 
-function InfoBarang({ dataProduk }) {
+function InfoBarang({ dataProduk, addbuttonPress }) {
   const data = dataProduk;
   const [produk, setProduk] = useState(dataProduk);
   const [open, setOpen] = React.useState(false);
@@ -42,7 +41,11 @@ function InfoBarang({ dataProduk }) {
     var value = e.target.value;
     setInput(value);
     if (value !== "") {
-      let filter = data.filter((e) => e.kodeBarang === value);
+      let filter = data.filter(
+        (e) =>
+          e.kodeBarang === value ||
+          e.namaBarang.toLowerCase().match(value.toLowerCase())
+      );
       if (filter.length > 0) {
         setProduk(filter);
       } else {
@@ -52,6 +55,11 @@ function InfoBarang({ dataProduk }) {
       setProduk(data);
     }
   };
+
+  const buttonPress = (item) => {
+    addbuttonPress(item);
+  };
+
   return (
     <Grid sx={{ alignItems: "center", display: "flex" }}>
       <IconButton
@@ -88,11 +96,10 @@ function InfoBarang({ dataProduk }) {
             </Typography>
             <TextField
               id="outlined-basic"
-              label="Kode Barang"
+              label="Kode Barang / Nama Barang"
               variant="outlined"
-              type="number"
               value={input}
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: 300 }}
               onChange={(e) => {
                 handleChange(e);
               }}
@@ -103,10 +110,11 @@ function InfoBarang({ dataProduk }) {
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell>Barcode</TableCell>
-                  <TableCell>Nama Barang</TableCell>
-                  <TableCell>Harga</TableCell>
-                  <TableCell>Quantity</TableCell>
+                  <TableCell width="20%">Barcode</TableCell>
+                  <TableCell width="40%">Nama Barang</TableCell>
+                  <TableCell width="20%">Harga</TableCell>
+                  <TableCell width="20%">Quantity</TableCell>
+                  <TableCell width="10%"></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -117,6 +125,16 @@ function InfoBarang({ dataProduk }) {
                       <TableCell>{item.namaBarang}</TableCell>
                       <TableCell>{item.harga}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
+                      <TableCell align="right">
+                        <Button
+                          color="info"
+                          variant="contained"
+                          size="sm"
+                          onClick={() => buttonPress(item)}
+                        >
+                          Tambah
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
